@@ -89,6 +89,21 @@ def loss_dfc(kin_p, kin_c, fid_p=None, person_p=None, fid_c=None, person_c=None)
 def loss_bce(logits, label):
     return F.binary_cross_entropy_with_logits(logits, label)
 
+def hard_margin_weight(kin_p, kin_c, margin, gain, lo, hi, higher_is_harder):
+    """按对余弦算难样本权重；权重已 detach，不参与梯度。返回 [B]。"""
+    kin_p = kin_p.float()
+    kin_c = kin_c.float()
+    cos = torch.cosine_similarity(kin_p, kin_c, dim=-1).detach()
+    gap = (cos - margin) if higher_is_harder else (margin - cos)
+    w = 1.0 + gain * torch.clamp(gap, min=0.0)
+    return torch.clamp(w, min=lo, max=hi)
+
+def weighted_bce(logits, label, weight):
+    """逐样本加权 BCE：sum(w·L)/sum(w)，保持与未加权同量级。"""
+    bce = F.binary_cross_entropy_with_logits(logits, label, reduction="none")  # [B,1]
+    w = weight.reshape(-1, 1)  # [B,1] 对齐
+    return (bce * w).sum() / w.sum().clamp(min=1e-8)
+
 def loss_l1(pred_age, real_age):
     return F.l1_loss(pred_age, real_age)
 
@@ -98,7 +113,13 @@ def _age_weight():
 
 # 完整总损失
 def total_multi_loss(kin_p, kin_c, pred_kv, pred_gr_p, pred_gr_c, pred_ap, pred_ac, lab_kv, lab_gr_p, lab_gr_c, lab_ap, lab_ac, fid_p=None, person_p=None, fid_c=None, person_c=None):
-    l_kv = loss_bce(pred_kv, lab_kv)
+    if config.USE_HW_BCE:
+        w_pos = hard_margin_weight(kin_p, kin_c, config.HW_MARGIN_POS,
+                                   config.HW_GAIN, config.HW_LO, config.HW_HI,
+                                   higher_is_harder=False)
+        l_kv = weighted_bce(pred_kv, lab_kv, w_pos)
+    else:
+        l_kv = loss_bce(pred_kv, lab_kv)
     l_gr_p = loss_bce(pred_gr_p, lab_gr_p)
     l_gr_c = loss_bce(pred_gr_c, lab_gr_c)
     l_gr = (l_gr_p + l_gr_c) / 2

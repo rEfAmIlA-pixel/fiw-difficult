@@ -44,6 +44,15 @@ USE_AGE_MASK = False
 USE_WEIGHT_DFC = False
 USE_FAM_BAL = True
 FAM_BAL_POWER = 0.5
+
+# ----- 难样本加权：BCE margin 软加权（112-imagenet-hw-bce-margin 系列）-----
+USE_HW_BCE = False      # 总开关；False 时与基线行为完全一致
+HW_MARGIN_POS = 0.15    # 正对余弦低于此值开始加权
+HW_MARGIN_NEG = 0.15    # 负对余弦高于此值开始加权
+HW_GAIN = 2.0           # 间隔增益 β
+HW_LO = 0.5             # 权重下限
+HW_HI = 2.0             # 权重上限
+
 RANDOM_SEED = 42
 
 # ----- 融合评测：冻 AdaFace -----

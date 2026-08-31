@@ -10,7 +10,7 @@ from sklearn.metrics import roc_auc_score
 from config import *
 from dataset import KinDataset, load_fiw_pos_neg, parse_fiw_ids
 from model import MultiGranFuzzyKinNetSwin
-from losses import total_multi_loss, loss_bce
+from losses import total_multi_loss, loss_bce, hard_margin_weight, weighted_bce
 
 cv2.setNumThreads(0)
 
@@ -280,8 +280,14 @@ def run_epoch(model, pos_loader, neg_loader, optimizer=None, scaler=None, ema=No
                     kin_p, kin_c_pos, pred_kv_pos, pg_pos, pc_pos, pap_pos, pac_pos,
                     lab_kv_pos, lab_gr_p, lab_gr_c, lab_ap, lab_ac, **id_kwargs
                 )
-                _, _, pred_kv_neg, _, _, _, _, _, _ = model.forward_pair(img_p_n, img_c_neg)
-                loss_neg = loss_bce(pred_kv_neg.float(), lab_kv_neg.float())
+                kin_p_n, kin_c_neg, pred_kv_neg, _, _, _, _, _, _ = model.forward_pair(img_p_n, img_c_neg)
+                if USE_HW_BCE:
+                    w_neg = hard_margin_weight(kin_p_n, kin_c_neg, HW_MARGIN_NEG,
+                                               HW_GAIN, HW_LO, HW_HI,
+                                               higher_is_harder=True)
+                    loss_neg = weighted_bce(pred_kv_neg.float(), lab_kv_neg.float(), w_neg)
+                else:
+                    loss_neg = loss_bce(pred_kv_neg.float(), lab_kv_neg.float())
                 loss_all = loss_pos + loss_neg
 
             if is_train:
@@ -386,6 +392,11 @@ def train_fiw(logger):
             )
     else:
         logger.log("家庭限权: 关（均匀打乱）")
+    logger.log(
+        f"难样本加权: {'开' if USE_HW_BCE else '关'} | "
+        f"margin_pos={HW_MARGIN_POS} margin_neg={HW_MARGIN_NEG} | "
+        f"gain={HW_GAIN} | clip=[{HW_LO},{HW_HI}]"
+    )
 
     start_epoch = 1
     if RESUME_START_EPOCH > 0 and os.path.exists(last_path):

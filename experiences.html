@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>FIW 亲缘实验谱 · experiences</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Serif:ital,wght@0,500;0,600;1,500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --paper: #dfe8e2;
+      --paper-2: #f3f7f4;
+      --ink: #17221c;
+      --ink-soft: #3a4a41;
+      --line: #8aa090;
+      --blood: #a33a3a;
+      --sage: #2f6b52;
+      --dust: #7a6a58;
+      --gold: #b0892e;
+      --sky: #2c6a86;
+      --chip: #c5d4cb;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; }
+    body {
+      font-family: "IBM Plex Sans", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(1200px 500px at 10% -10%, #cfe0d4 0%, transparent 55%),
+        var(--paper);
+      line-height: 1.5;
+    }
+    a { color: var(--sky); }
+    .wrap { max-width: 1120px; margin: 0 auto; padding: 40px 24px 80px; }
+    header.hero {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 28px;
+      align-items: end;
+      padding-bottom: 28px;
+      border-bottom: 1px solid var(--line);
+    }
+    .kicker {
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 12px;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--ink-soft);
+    }
+    h1 {
+      font-family: "IBM Plex Serif", serif;
+      font-size: clamp(2rem, 4vw, 3.1rem);
+      font-weight: 600;
+      line-height: 1.15;
+      margin: 8px 0 10px;
+      text-wrap: balance;
+    }
+    .lede { max-width: 62ch; color: var(--ink-soft); margin: 0; }
+    .best {
+      min-width: 240px;
+      padding: 16px 18px 14px;
+      background: var(--paper-2);
+      border: 1px solid #b7c7bc;
+    }
+    .best b {
+      font-family: "IBM Plex Serif", serif;
+      font-size: 2.4rem;
+      font-weight: 600;
+      color: var(--blood);
+      display: block;
+      line-height: 1;
+    }
+    .best span { font-size: 13px; color: var(--ink-soft); }
+    .filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 22px 0 8px;
+    }
+    .filters button {
+      font: 500 13px/1 "IBM Plex Sans", sans-serif;
+      border: 1px solid var(--line);
+      background: transparent;
+      color: var(--ink);
+      padding: 8px 12px;
+      cursor: pointer;
+    }
+    .filters button[aria-pressed="true"] {
+      background: var(--ink);
+      color: var(--paper-2);
+      border-color: var(--ink);
+    }
+    .chart-box {
+      margin: 18px 0 36px;
+      background: var(--paper-2);
+      border: 1px solid #b7c7bc;
+      padding: 16px 12px 8px;
+    }
+    .chart-box h2 {
+      font-size: 13px;
+      font-weight: 600;
+      margin: 0 12px 8px;
+      letter-spacing: 0.04em;
+    }
+    svg.auc { width: 100%; height: 220px; display: block; }
+    .legend {
+      display: flex; gap: 16px; font-size: 12px; color: var(--ink-soft);
+      padding: 4px 12px 10px;
+    }
+    .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
+    .run {
+      display: grid;
+      grid-template-columns: 92px 1fr;
+      gap: 18px;
+      padding: 26px 0;
+      border-bottom: 1px dashed var(--line);
+    }
+    .run:last-child { border-bottom: 0; }
+    .idx {
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 12px;
+      color: var(--ink-soft);
+      padding-top: 6px;
+    }
+    .idx em {
+      display: block;
+      font-style: normal;
+      font-family: "IBM Plex Serif", serif;
+      font-size: 22px;
+      color: var(--ink);
+      margin-top: 2px;
+    }
+    h3 {
+      font-family: "IBM Plex Serif", serif;
+      font-size: 1.35rem;
+      margin: 0 0 6px;
+      font-weight: 600;
+    }
+    .meta { font-size: 13px; color: var(--ink-soft); margin-bottom: 10px; }
+    .badge {
+      display: inline-block;
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 11px;
+      letter-spacing: 0.04em;
+      padding: 3px 8px;
+      margin-right: 6px;
+      vertical-align: 2px;
+    }
+    .up { background: #d7efe3; color: #1d5c3d; }
+    .flat { background: #e7e3d4; color: #5c5340; }
+    .down { background: #f3d6d2; color: #7a2e2e; }
+    .runn { background: #d5e8f1; color: #1d4f66; }
+    .skip { background: #eadfcb; color: #6a5428; }
+    .ctrl { background: #e2e2e2; color: #444; }
+    .change, .notes {
+      max-width: 72ch;
+      font-size: 15px;
+      margin: 0 0 10px;
+    }
+    .notes { color: var(--ink-soft); }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(118px, 1fr));
+      gap: 8px 12px;
+      margin: 12px 0 10px;
+    }
+    .metric dt {
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--ink-soft);
+    }
+    .metric dd {
+      margin: 0;
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 16px;
+      font-weight: 500;
+    }
+    .rels {
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 12.5px;
+      color: var(--ink-soft);
+      margin: 0 0 8px;
+    }
+    .path {
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 12px;
+      color: var(--dust);
+      word-break: break-all;
+    }
+    footer {
+      margin-top: 40px;
+      font-size: 12px;
+      color: var(--ink-soft);
+    }
+    @media (max-width: 720px) {
+      header.hero { grid-template-columns: 1fr; }
+      .run { grid-template-columns: 1fr; gap: 6px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      * { animation: none !important; transition: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="hero">
+      <div>
+        <div class="kicker">FIW · Track I · 亲子四类</div>
+        <h1>实验谱：每一次改动，不论成败</h1>
+        <p class="lede">
+          多粒度模糊亲缘验证。当前最好是 AdaFace 余弦与 112-MLP 加权融合（官方 Test 四类平均 0.8394）。
+          说明与评测表见本目录 <code>说明文档.md</code>、<code>评测结果.md</code>。年龄与 11 类分路各自记在对应目录。
+        </p>
+      </div>
+      <div class="best">
+        <span>亲子四类最好 Test AUC</span>
+        <b>0.8394</b>
+        <span>加权融合 · α=0.60</span>
+      </div>
+    </header>
+
+    <div class="filters" role="toolbar" aria-label="筛选实验">
+      <button type="button" data-f="all" aria-pressed="true">全部 23 轮</button>
+      <button type="button" data-f="up" aria-pressed="false">涨点</button>
+      <button type="button" data-f="down" aria-pressed="false">失败 / 更差</button>
+      <button type="button" data-f="flat" aria-pressed="false">持平</button>
+      <button type="button" data-f="runn" aria-pressed="false">进行中</button>
+    </div>
+
+    <div class="chart-box">
+      <h2>有官方测试的轮次 · Test AUC（亲子四类平均）</h2>
+      <svg class="auc" viewBox="0 0 1000 220" role="img" aria-label="测试 AUC 折线">
+        <line x1="48" y1="20" x2="48" y2="180" stroke="#8aa090" />
+        <line x1="48" y1="180" x2="980" y2="180" stroke="#8aa090" />
+        <text x="8" y="28" font-size="11" fill="#3a4a41" font-family="IBM Plex Mono, monospace">0.86</text>
+        <text x="8" y="104" font-size="11" fill="#3a4a41" font-family="IBM Plex Mono, monospace">0.76</text>
+        <text x="8" y="180" font-size="11" fill="#3a4a41" font-family="IBM Plex Mono, monospace">0.66</text>
+        <polyline id="auc-line" fill="none" stroke="#a33a3a" stroke-width="2.2" points="" />
+        <g id="auc-pts"></g>
+      </svg>
+      <div class="legend">
+        <span><i class="dot" style="background:#a33a3a"></i>已评测 Test AUC</span>
+        <span><i class="dot" style="background:#7a6a58"></i>未评测 / 崩掉（不进折线）</span>
+      </div>
+    </div>
+
+    <div id="runs"></div>
+    <footer>数据来自本目录 experiences.txt · 打开本文件即可离线查看 · 不依赖训练脚本</footer>
+  </div>
+
+  <script>
+    const runs = [
+      {
+        id: "64-scratch-orig-code", date: "2026-08 协议前",
+        tag: "ctrl", tagLabel: "对照",
+        change: "最初代码。64×64，主干无预训练，负样本靠 batch 内随机换子女。",
+        setup: "IMG=64 · 无官方划分",
+        notes: "未按官方 FIW 测试协议完整评估。不要和后面的官方划分实验混。",
+        w: "无对应本次官方测试权重"
+      },
+      {
+        id: "64-scratch-fiw-official", date: "2026-08-14",
+        tag: "up", tagLabel: "协议修好 · 可评测",
+        change: "官方 train/val/test；跨家庭负样本 txt；DFC 同家/同人屏蔽；性别 mask detach 调顺；年龄关闭；难样本加权关闭。",
+        setup: "IMG=64 · PRETRAIN=关 · BATCH=256 · AMP=开 · 冻主干 3 轮",
+        val: 0.6275, test: 0.6699, accb: 0.6292, gender: 0.8122,
+        notes: "epoch 15 验证 NaN 中断。评测用 best 不是 last。这是官方协议下的第一组能报的数。权重后来已删除，无法再加载。",
+        w: "无权重（原 weights/mgf_kin_best.pth 已删）"
+      },
+      {
+        id: "112-imagenet-pretrain", date: "2026-08-14 ~ 15",
+        tag: "up", tagLabel: "大涨点",
+        change: "输入改为 112，Swin ImageNet 预训练，batch 128。权重文件名带 112，不覆盖 64。",
+        setup: "IMG=112 · PRETRAIN=开 · BATCH=128 · AMP=开",
+        val: 0.6743, test: 0.7163, accb: 0.6676, gender: 0.8603, eer: 0.3464, noise: 0.6532,
+        rel: "FD 0.7136 / FS 0.7610 / MD 0.7039 / MS 0.6865",
+        notes: "干净测试 0.67→0.72。epoch 8 起验证掉到 0.6485。噪声掉得比 64 更猛。Swin 在 112 上要插值位置编码。",
+        w: "weights/mgf_kin_fiw_112_best.pth"
+      },
+      {
+        id: "112-imagenet-cosine", date: "2026-08-15",
+        tag: "flat", tagLabel: "持平",
+        change: "只改训练协议：解冻后 cosine 退火 + 验证 AUC 早停 patience=5。模型与数据不动。",
+        setup: "同上 · cosine T_max=47 · eta_min=1e-6",
+        val: 0.6761, test: 0.7165, accb: 0.6615, gender: 0.8532, eer: 0.3439, noise: 0.6557,
+        rel: "FD 0.7085 / FS 0.7610 / MD 0.7005 / MS 0.6960",
+        notes: "Test 0.7163→0.7165，等于重复实验。epoch 9 验证变成 0.50，随后损失 0.0000（AMP 溢出）。早停让停得干净，没涨点。",
+        w: "weights/112-imagenet-cosine/best.pth"
+      },
+      {
+        id: "112-imagenet-fp32", date: "2026-08-15",
+        tag: "down", tagLabel: "排除 AMP",
+        change: "相对 cosine，只关掉 AMP，改 FP32。",
+        setup: "AMP=关 · 其余同 cosine",
+        val: 0.6754,
+        notes: "epoch 8 仍 Val=0.50。崩因不是 AMP。未评测 test。",
+        w: "weights/112-imagenet-fp32/best.pth"
+      },
+      {
+        id: "112-imagenet-dfc-l2", date: "2026-08-15",
+        tag: "down", tagLabel: "失败 · 更早崩",
+        change: "DFC 里对 F_kin 先 L2 再算余弦和欧氏。以为能挡住特征变长。",
+        setup: "AMP=关 · A_DFC=0.7 · B_DFC=0.3",
+        notes: "解冻第一轮 Val=0.50，skip=200/1187。L2 让欧氏项在球面上过强。已改回。权重停在冻结阶段，无用。",
+        w: "weights/112-imagenet-dfc-l2/best.pth"
+      },
+      {
+        id: "112-imagenet-cs-only", date: "2026-08-15",
+        tag: "up", tagLabel: "小涨 · 关欧氏",
+        change: "关掉欧氏 DFC（B_DFC=0，A_DFC=1），只留余弦对比。L2 不加。",
+        setup: "AMP=关 · B_DFC=0 · cosine + 早停",
+        val: 0.6789, test: 0.7198, accb: 0.6699, gender: 0.8541, eer: 0.3433, noise: 0.6568,
+        rel: "FD 0.7080 / FS 0.7666 / MD 0.7133 / MS 0.6912",
+        notes: "解冻不再第一轮崩。Test 0.7165→0.7198。epoch 8 仍变成 0.50（skip=54）。欧氏可先关着。",
+        w: "weights/112-imagenet-cs-only/best.pth"
+      },
+      {
+        id: "112-imagenet-lr-bb", date: "2026-08-15",
+        tag: "down", tagLabel: "失败 · 更早崩",
+        change: "只把主干解冻学习率从 2e-5 降到 1e-5。",
+        setup: "LR_BACKBONE=1e-5 · B_DFC=0",
+        val: 0.6646,
+        notes: "epoch 7 就 Val=0.50。降学习率更差。skip 只有 2，说明损失有限时 Inf 梯度仍可能写入 Adam。未评测。",
+        w: "weights/112-imagenet-lr-bb/best.pth"
+      },
+      {
+        id: "112-imagenet-finite-grad", date: "2026-08-15",
+        tag: "up", tagLabel: "小涨 · 保险丝",
+        change: "损失看起来正常、但梯度是 Inf 时不更新（避免污染 Adam）。日志增加 g_n。",
+        setup: "LR_BACKBONE=2e-5 · TAU_CS=0.08",
+        val: 0.6835, test: 0.7214, acc05: 0.6468, accb: 0.6723, gender: 0.8700, eer: 0.3397, noise: 0.6572,
+        rel: "FD 0.7179 / FS 0.7597 / MD 0.7054 / MS 0.7026",
+        notes: "第一次活过第 8 轮。第 11 轮 Val 0.6835 但 skip=1077/1187。skip 是保险丝不是治法。ACC@0.5 和性别更好。",
+        w: "weights/112-imagenet-finite-grad/best.pth"
+      },
+      {
+        id: "112-imagenet-tau02", date: "2026-08-15",
+        tag: "down", tagLabel: "失败 · 温度",
+        change: "只把 DFC 余弦温度 TAU_CS 从 0.08 调到 0.2，想让对比不那么尖。",
+        setup: "TAU_CS=0.2 · Inf 梯度仍跳过",
+        val: 0.6541,
+        notes: "skip 更早暴涨（第 5 轮 461，第 6 轮 1056）。feat_n 涨更快。温度不是唯一崩因。未评测。",
+        w: "weights/112-imagenet-tau02/best.pth"
+      },
+      {
+        id: "112-imagenet-fam-bal", date: "2026-08-15",
+        tag: "up", tagLabel: "大涨点",
+        change: "训练按父母 FID 逆频抽样，549 家总权重相等。txt 不改。验证/测试仍走官方名单。",
+        setup: "USE_FAM_BAL · power=1 · TAU_CS=0.08",
+        val: 0.7010, test: 0.7472, acc05: 0.5891, accb: 0.6884, gender: 0.8689, eer: 0.3250, noise: 0.6848,
+        rel: "FD 0.7342 / FS 0.7994 / MD 0.7350 / MS 0.7203",
+        notes: "F0601 从 38.6% 压到期望 0.2%。第 8–9 轮 skip=0。Test 0.72→0.75。epoch 4 之后验证回落，评测用第 4 轮。ACC@0.5 变差是 0.5 阈值不贴余弦分数。",
+        w: "weights/112-imagenet-fam-bal/best.pth"
+      },
+      {
+        id: "112-imagenet-fam-sqrt", date: "2026-08-15",
+        tag: "up", tagLabel: "当前最好",
+        change: "抽样改为 1/sqrt(家庭次数)。大家庭仍比小家多，但不再占 38%。",
+        setup: "FAM_BAL_POWER=0.5 · 其余同 fam-bal",
+        val: 0.6996, test: 0.7520, acc05: 0.5687, accb: 0.6913, gender: 0.8687, eer: 0.3183, noise: 0.6791,
+        rel: "FD 0.7365 / FS 0.8033 / MD 0.7351 / MS 0.7332",
+        notes: "F0601 期望 3.7%。验证略低于均权，测试更好。噪声略差于均权。之后被 mlp-head 的 Test 0.7539 略超过。",
+        w: "weights/112-imagenet-fam-sqrt/best.pth"
+      },
+      {
+        id: "224-imagenet-fam-sqrt", date: "2026-08-15 ~ 16",
+        tag: "flat", tagLabel: "持平 · 更慢",
+        change: "只把输入改为 224（Swin 原生尺寸，不再插值）。抽样仍 1/sqrt。batch 64。",
+        setup: "IMG=224 · BATCH=64 · AMP=关 · 冻 3 轮后解冻",
+        val: 0.7101, test: 0.7521, acc05: 0.6606, accb: 0.6926, gender: 0.8786, eer: 0.3155, noise: 0.6553,
+        rel: "FD 0.7375 / FS 0.7886 / MD 0.7444 / MS 0.7379",
+        notes: "Val 0.7101@epoch5，高于 112。Test AUC 0.7520→0.7521，等于没涨。噪声 0.679→0.655，更怕噪声。ACC@0.5 和性别更好。FS 下降。不值得 3～4 倍时间。",
+        w: "weights/224-imagenet-fam-sqrt/best.pth"
+      },
+      {
+        id: "112-imagenet-head-lr", date: "2026-08-16",
+        tag: "down", tagLabel: "失败 · 头 lr",
+        change: "解冻后头部 lr 从 1e-4 降到 3e-5，冻结阶段仍 1e-4。同时打开 AMP。抽样与 112 尺寸同 fam-sqrt。",
+        setup: "IMG=112 · BATCH=128 · AMP=开 · LR_HEAD_UNFREEZE=3e-5 · FAM_BAL_POWER=0.5",
+        val: 0.6963, test: 0.7394, acc05: 0.5679, accb: 0.6811, gender: 0.8670, eer: 0.3309, noise: 0.6728,
+        rel: "FD 0.7215 / FS 0.7858 / MD 0.7366 / MS 0.7137",
+        notes: "Val 仍第 4 轮到顶。Test 0.7520→0.7394。txt 仍是 15.2 万行；新机器有效训练 14.0 万对 / 506 家（缺训练图）。学习率这条线停。",
+        w: "weights/112-imagenet-head-lr/best.pth"
+      },
+      {
+        id: "112-imagenet-mlp-head", date: "2026-08-16",
+        tag: "up", tagLabel: "微涨 · MLP 头",
+        change: "head_kv / head_gr 从一层 Linear 改为 Linear(768→256)→ReLU→Linear(256→1)。解冻头 lr 改回 1e-4。",
+        setup: "IMG=112 · BATCH=128 · AMP=开 · LR_HEAD_UNFREEZE=1e-4 · FAM_BAL_POWER=0.5",
+        val: 0.6986, test: 0.7539, acc05: 0.5664, accb: 0.6929, gender: 0.8806, eer: 0.3193, noise: 0.6736,
+        rel: "FD 0.7358 / FS 0.8076 / MD 0.7433 / MS 0.7290",
+        notes: "Val 仍第 4 轮到顶。Test 0.7520→0.7539，主指标只微涨。性别 0.869→0.881 更明显。噪声 0.679→0.674，略差。数据已齐。目前最好测试权重。",
+        w: "weights/112-imagenet-mlp-head/best.pth"
+      },
+      {
+        id: "112-imagenet-spatial-fdm", date: "2026-08-16",
+        tag: "down", tagLabel: "失败 · 空间解耦",
+        change: "Swin 不再提前 GAP；DualFDM 在特征图上解耦，再池化成 F_kin。MLP 头与抽样不变。",
+        setup: "IMG=112 · BATCH=128 · AMP=开 · 空间 DualFDM → GAP",
+        val: 0.6963, test: 0.7520, acc05: 0.5655, accb: 0.6842, gender: 0.8752, eer: 0.3204, noise: 0.6827,
+        rel: "FD 0.7463 / FS 0.7995 / MD 0.7365 / MS 0.7256",
+        notes: "Val 仍第 4 轮到顶。Test 0.7539→0.7520。噪声 0.674→0.683 略好。112 格子太少，空间解耦没抬主指标。",
+        w: "weights/112-imagenet-spatial-fdm/best.pth"
+      },
+      {
+        id: "112-imagenet-mlp-ema", date: "2026-08-16",
+        tag: "flat", tagLabel: "Val涨 · Test平",
+        change: "MLP 结构不变。解冻后开 EMA（decay=0.9995），验证和 best.pth 用滑动平均。",
+        setup: "IMG=112 · USE_EMA=解冻后 · decay=0.9995",
+        val: 0.7023, test: 0.7518, acc05: 0.6217, accb: 0.6846, gender: 0.8688, eer: 0.3221, noise: 0.6923,
+        rel: "FD 0.7422 / FS 0.8024 / MD 0.7369 / MS 0.7258",
+        notes: "Val 推到第 6 轮 0.7023。Test 0.7539→0.7518，主指标未超过 MLP。噪声 0.674→0.692 最好。ACC@0.5 明显升高。按约定收束。",
+        w: "weights/112-imagenet-mlp-ema/best.pth"
+      },
+      {
+        id: "64-celeba-mim-mlp", date: "2026-08-16",
+        tag: "flat", tagLabel: "64 MIM · 不如112",
+        change: "预训练改为 CelebA SimMIM encoder。权重按 64 训练，输入改回 64。MLP 头与 sqrt 不变，无 EMA。",
+        setup: "IMG=64 · CelebA-MIM · BATCH=128 · AMP=开 · EMA=关",
+        val: 0.6800, test: 0.7355, acc05: 0.5705, accb: 0.6715, gender: 0.8381, eer: 0.3359, noise: 0.7196,
+        rel: "FD 0.7124 / FS 0.7684 / MD 0.7192 / MS 0.7418",
+        notes: "比 64 从零 0.670 高约 0.066。低于 112-MLP 0.754。噪声 0.720，掉得很少。不能替代 112+ImageNet。",
+        w: "weights/64-celeba-mim-mlp/best.pth"
+      },
+      {
+        id: "112-adaface-ir101-webface4m", date: "2026-08-17",
+        tag: "down", tagLabel: "失败 · AdaFace",
+        change: "主干换成 AdaFace IR-101（WebFace4M）。输入 112 BGR 三通道。DualFDM 仍接 512 维 1×1。MLP / sqrt / 两阶段保留，不开 EMA。",
+        setup: "IMG=112 · IR-101 · BATCH=64 · AMP=开 · EMA=关 · FEAT_DIM=512",
+        val: 0.7015, test: 0.7412, acc05: 0.6348, accb: 0.6774, gender: 0.9627, eer: 0.3258, noise: 0.7354,
+        rel: "FD 0.7129 / FS 0.7910 / MD 0.7288 / MS 0.7321",
+        notes: "Val 0.7015@e4 略高于 MLP，Test 0.7539→0.7412。性别 0.881→0.963。噪声几乎不掉（0.735）。身份 1×1 DualFDM 没抬亲缘。主结果仍用 mlp-head。",
+        w: "weights/112-adaface-ir101-webface4m/best.pth"
+      },
+      {
+        id: "112-adaface-ir101-cosine", date: "2026-08-17",
+        tag: "up", tagLabel: "大涨点 · 冻余弦",
+        change: "冻住 IR-101，去掉 DualFDM，不加载亲缘权重。官方 test 用 512 维余弦当亲缘分数。",
+        setup: "无训练 · 仅 adaface_ir101_webface4m.ckpt",
+        test: 0.7782, acc05: 0.6747, accb: 0.7129, eer: 0.2893, noise: 0.7672,
+        rel: "FD 0.7298 / FS 0.8124 / MD 0.8018 / MS 0.7689",
+        notes: "比 DualFDM AdaFace 0.741 高 0.037，比 112-MLP 0.754 高 0.024。正/负余弦 0.088 vs 0.010。后被融合超过。",
+        w: "adaface_ir101_webface4m.ckpt"
+      },
+      {
+        id: "112-adaface-mlp-fusion", date: "2026-08-17",
+        tag: "up", tagLabel: "大涨点 · 融合",
+        change: "冻 AdaFace 余弦与 112-MLP 分数在验证集上 z-score 加权（α=0.60）及逻辑回归。系数不碰 test。",
+        setup: "无再训练 · α=0.60 Ada · Val 融合 0.8104",
+        val: 0.8104, test: 0.8394, acc05: 0.7588, accb: 0.7584, eer: 0.2397, noise: 0.7982,
+        rel: "FD 0.8071 / FS 0.8850 / MD 0.8467 / MS 0.8188",
+        notes: "Val 上 blend 与 logit 都是 0.810。Test 加权 0.8394、logit 0.8385。比冻余弦 0.778 高 0.061。FD 0.73→0.81，两条路互补。ACC@0.5≈ACC@best。当前最好。",
+        w: "adaface ckpt + weights/112-imagenet-mlp-head/best.pth"
+      },
+      {
+        id: "112-adaface-ir101-probe", date: "2026-08-17",
+        tag: "down", tagLabel: "失败 · 浅头单路",
+        change: "冻住 IR-101，去掉 DualFDM。|fp-fc| 与 fp⊙fc 进浅 MLP，只训头。训完再与 112-MLP 融合。",
+        setup: "IMG=112 · BATCH=64 · 早停 e13 · Best e8 · 主干始终冻住",
+        val: 0.7341, test: 0.7475, acc05: 0.6760, accb: 0.6829, eer: 0.3175, noise: 0.7349,
+        rel: "FD 0.7114 / FS 0.7733 / MD 0.7668 / MS 0.7386",
+        notes: "单路 Test 0.7782→0.7475，四类都低于冻余弦。也略低于 112-MLP 0.754。BCE 把识别排序用差了。不要再训同类浅头。",
+        w: "weights/112-adaface-ir101-probe/best.pth（只存浅头）"
+      },
+      {
+        id: "112-adaface-probe-mlp-fusion", date: "2026-08-17",
+        tag: "down", tagLabel: "失败 · 浅头融合",
+        change: "用浅头 logit 替换冻余弦，再与 112-MLP 在验证集上融合。系数不碰 test。",
+        setup: "α=0.55 Ada · Val 融合 0.7867 · 无再训练",
+        val: 0.7867, test: 0.8211, acc05: 0.7403, accb: 0.7419, eer: 0.2587, noise: 0.7727,
+        rel: "FD 0.7964 / FS 0.8643 / MD 0.8245 / MS 0.7993",
+        notes: "对照余弦融合 0.8394→0.8211。AdaFace 一路从 0.778 换成 0.748，融合跟着掉。丢掉浅头。主结果仍用 python eval_fusion.py。",
+        w: "浅头 + weights/112-imagenet-mlp-head/best.pth"
+      }
+    ];
+
+    const yMap = v => 180 - (v - 0.66) / 0.20 * 160;
+    const tested = runs.map((r, i) => ({ r, i })).filter(x => typeof x.r.test === "number" && x.r.chart !== false);
+    const line = document.getElementById("auc-line");
+    const pts = document.getElementById("auc-pts");
+    const xs = tested.map((_, k) => 48 + k * (932 / Math.max(tested.length - 1, 1)));
+    line.setAttribute("points", tested.map((x, k) => xs[k] + "," + yMap(x.r.test)).join(" "));
+    tested.forEach((x, k) => {
+      const cx = xs[k], cy = yMap(x.r.test);
+      pts.innerHTML += `<circle cx="${cx}" cy="${cy}" r="4.5" fill="#a33a3a" />
+        <text x="${cx}" y="198" text-anchor="middle" font-size="10" font-family="IBM Plex Mono, monospace" fill="#3a4a41">${x.r.test.toFixed(3)}</text>
+        <text x="${cx}" y="212" text-anchor="middle" font-size="9" font-family="IBM Plex Sans, sans-serif" fill="#3a4a41">${x.i + 1}</text>`;
+    });
+
+    function fmt(v, d=4) { return typeof v === "number" ? v.toFixed(d) : "—"; }
+    function card(r, n) {
+      const metrics = [
+        ["Val AUC", r.val], ["Test AUC", r.test], ["噪声 AUC", r.noise],
+        ["ACC@best", r.accb], ["ACC@0.5", r.acc05], ["EER", r.eer], ["性别", r.gender]
+      ].filter(x => x[1] != null);
+      return `<article class="run" data-tag="${r.tag}">
+        <div class="idx">#${String(n).padStart(2,"0")}<em>${r.date}</em></div>
+        <div>
+          <h3><span class="badge ${r.tag}">${r.tagLabel}</span>${r.id}</h3>
+          <p class="meta">${r.setup}</p>
+          <p class="change">${r.change}</p>
+          ${metrics.length ? `<dl class="grid">${metrics.map(([k,v]) =>
+            `<div class="metric"><dt>${k}</dt><dd>${fmt(v)}</dd></div>`).join("")}</dl>` : ""}
+          ${r.rel ? `<p class="rels">${r.rel}</p>` : ""}
+          <p class="notes">${r.notes}</p>
+          <p class="path">${r.w}</p>
+        </div>
+      </article>`;
+    }
+    const root = document.getElementById("runs");
+    root.innerHTML = runs.map((r, i) => card(r, i + 1)).join("");
+
+    document.querySelectorAll(".filters button").forEach(btn => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".filters button").forEach(b => b.setAttribute("aria-pressed", "false"));
+        btn.setAttribute("aria-pressed", "true");
+        const f = btn.dataset.f;
+        document.querySelectorAll(".run").forEach(el => {
+          el.style.display = (f === "all" || el.dataset.tag === f) ? "" : "none";
+        });
+      });
+    });
+  </script>
+</body>
+</html>
