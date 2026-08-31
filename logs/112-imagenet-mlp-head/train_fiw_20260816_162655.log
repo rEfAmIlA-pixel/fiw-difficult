@@ -1,0 +1,25 @@
+[2026-08-16 16:26:55] 配置: EXP=112-imagenet-mlp-head | IMG=112 | PRETRAIN=True | BATCH=128 | VAL_BATCH=256 | EPOCHS=50 | USE_AGE_MASK=False | cosine+early_stop=5 | FAM_BAL=True
+[2026-08-16 16:26:55] 损失权重: BCE=0.25 | Gender=0.1 | Age=0.0 | DFC=0.65 | TAU_CS=0.08
+[2026-08-16 16:26:55] 两阶段冻结: 前3轮冻结主干
+[2026-08-16 16:27:13] 实验: 112-imagenet-mlp-head | 权重目录: ./weights/112-imagenet-mlp-head/
+[2026-08-16 16:27:13] 阶段1：冻结主干（conv_in除外），训练头部与解耦模块，lr=0.0001
+[2026-08-16 16:27:13] 阶段2：cosine T_max=47 eta_min=1e-06 | 早停 patience=5
+[2026-08-16 16:27:13] 年龄分支: 关闭（不进前向/损失/优化器）
+[2026-08-16 16:27:13] 训练集: 151951正 / 151951负 | 验证集: 28134正 / 28134负
+[2026-08-16 16:27:13] 加速: workers=8 | AMP=True | train_bs=128 | val_bs=256 | pin_memory=True
+[2026-08-16 16:27:13] 家庭限权: 开 | power=0.5 | 正样本家庭数=549 | 最大家 F0601 原占比 38.6% → 期望 3.7%
+[2026-08-16 16:27:13] 家庭限权: 负样本家庭数=549 | 最大家 F0601 原占比 38.6% → 期望 3.7%
+[2026-08-16 16:30:53] Epoch 01/50 | Train Loss: 3.5760 | Val AUC: 0.6102 | Best AUC: 0.6102 | feat_n=9.14 g_n=2.237 skip=4/1187 | lr=1.00e-04 *
+[2026-08-16 16:34:18] Epoch 02/50 | Train Loss: 3.3598 | Val AUC: 0.6400 | Best AUC: 0.6400 | feat_n=7.35 g_n=3.510 skip=1/1187 | lr=1.00e-04 *
+[2026-08-16 16:37:43] Epoch 03/50 | Train Loss: 3.2342 | Val AUC: 0.6533 | Best AUC: 0.6533 | feat_n=7.07 g_n=4.428 skip=1/1187 | lr=1.00e-04 *
+[2026-08-16 16:37:43] ===== 阶段2：解冻主干 + cosine，主干lr=2e-05 头部lr=0.0001 T_max=47 =====
+[2026-08-16 16:41:53] Epoch 04/50 | Train Loss: 2.6740 | Val AUC: 0.6986 | Best AUC: 0.6986 | feat_n=11.38 g_n=13.209 skip=0/1187 | lr_bb=2.00e-05 lr_head=9.99e-05 *
+[2026-08-16 16:46:35] Epoch 05/50 | Train Loss: 1.9793 | Val AUC: 0.6919 | Best AUC: 0.6986 | feat_n=12.07 g_n=17.133 skip=0/1187 | lr_bb=1.99e-05 lr_head=9.96e-05
+[2026-08-16 16:52:11] Epoch 06/50 | Train Loss: 1.4135 | Val AUC: 0.6873 | Best AUC: 0.6986 | feat_n=14.55 g_n=18.770 skip=0/1187 | lr_bb=1.98e-05 lr_head=9.90e-05
+[2026-08-16 16:57:05] Epoch 07/50 | Train Loss: 0.9841 | Val AUC: 0.6829 | Best AUC: 0.6986 | feat_n=18.27 g_n=17.913 skip=1/1187 | lr_bb=1.97e-05 lr_head=9.82e-05
+[2026-08-16 17:01:48] Epoch 08/50 | Train Loss: 0.7034 | Val AUC: 0.6709 | Best AUC: 0.6986 | feat_n=22.53 g_n=15.960 skip=0/1187 | lr_bb=1.95e-05 lr_head=9.73e-05
+[2026-08-16 17:06:32] Epoch 09/50 | Train Loss: 0.5299 | Val AUC: 0.6678 | Best AUC: 0.6986 | feat_n=26.61 g_n=13.803 skip=8/1187 | lr_bb=1.92e-05 lr_head=9.61e-05
+[2026-08-16 17:06:32] 早停：验证 AUC 连续 5 轮未提升，最优 0.6986 @ ./weights/112-imagenet-mlp-head/best.pth
+[2026-08-16 17:06:32] ============================================================
+[2026-08-16 17:06:32] 训练完成 | 最优验证 AUC = 0.6986 | 权重 ./weights/112-imagenet-mlp-head/best.pth
+[2026-08-16 17:06:32] ============================================================

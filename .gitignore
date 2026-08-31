@@ -1,0 +1,6 @@
+# macOS
+.DS_Store
+
+# 大文件（超过 GitHub 100MB 限制）
+*.ckpt
+weights/
