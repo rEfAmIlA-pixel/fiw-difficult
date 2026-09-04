@@ -341,8 +341,22 @@ FIW Track I 亲子四类（FD / FS / MD / MS）。当前最好：冻 AdaFace 余
 备注: skip E9=23→E10=282→E11=644→E12=866→E13=1028→E14=1112（早停）。不稳定与加权无关（D 加权是关的），
       坐实"关 FAM_BAL 必晚期不稳定"（历史 8 月记录同款模式）。Test 结果仅供参考。
 
+## 112-imagenet-hw-dfc-margin（B2：DFC InfoNCE 逐行加权）
+日期: 2026-09-04
+改动: 新增 USE_HW_DFC 开关，同一套 margin 软加权放到 DFC InfoNCE 逐行加权（sum(w·L)/sum(w)）；
+      BCE 侧加权关闭，FAM 开（B 配置）。HARD_WEIGHT/THRESH/USE_WEIGHT_DFC 未动。
+设置: USE_HW_DFC=True, USE_HW_BCE=False, FAM_BAL 开, AMP=False, seed 42, margin 0.15/0.15/gain 2.0/clip [0.5,2.0]
+结果: Val 0.6905 (epoch 5) | Test 单路 0.7371 | 融合 blend 0.8298 / logit 0.8306 | 噪声 MLP 0.6572 / blend 0.7917 | α=0.65
+权重: weights/112-imagenet-hw-dfc-margin/best.pth
+日志: logs/112-imagenet-hw-dfc-margin/
+备注: 训练 10 轮 skip=0 干净，早停 E10。对照 B（Val 0.6869 / 单路 0.7333 / 融合 0.8299）：
+      单路 +0.0038（未超 0.005 淘汰线），融合 -0.0001。轨迹"前段升得快、E5 后持续回落"，
+      加权让模型更激进拟合难样本但泛化未改善。淘汰。
+
 矩阵结论（2×2，标准 Test 四类平均 AUC 单路/融合）：
       FAM 开 × HW 开 = 0.7333/0.8299（B）  FAM 开 × HW 关 = 0.7316/0.8298（A1）
       FAM 关 × HW 开 = 0.7115/0.8218（C）  FAM 关 × HW 关 = 0.7082/0.8139（D）
       HW 效应 ≈ 0（FAM 开层 +0.0017/+0.0001）；FAM 效应 +0.022/+0.012，且为训练稳定性唯一来源。
-      下一步候选：B2（DFC 逐行加权，把同一套 margin 加权放到 InfoNCE 上），待定。
+      B2 收尾（DFC 逐行加权）：单路 0.7371（vs B +0.0038，未超淘汰线）/ 融合 0.8298（vs B -0.0001）→ 淘汰。
+      margin 软加权路线结论：BCE 侧、DFC 侧均已验证无效，路线关闭。
+      原因：InfoNCE 本身即难样本感知（exp 放大难对梯度），外部再加 margin 逐行加权是冗余。
