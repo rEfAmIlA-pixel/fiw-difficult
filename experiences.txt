@@ -297,3 +297,52 @@ FIW Track I 亲子四类（FD / FS / MD / MS）。当前最好：冻 AdaFace 余
 备注: 融合失败。对照余弦×MLP 的 Test 0.8394→0.8211，Val 0.810→0.787，噪声 0.798→0.773。
       AdaFace 这一路从 0.778 换成 0.748，融合跟着掉。丢掉浅头。
       主结果仍用冻余弦 × 112-MLP（python eval_fusion.py，不要加 --probe）。
+
+## 112-imagenet-mlp-head-rerun（A1：难样本加权矩阵基线复现）
+日期: 2026-09-01
+改动: 无（基线配置对照；唯一差异 USE_AMP=False——服务器 4090+驱动595 fp16 训练 NaN 的修复）
+设置: IMG=112, PRETRAIN=True, BATCH=128, AMP=False, TAU_CS=0.08, B_DFC=0, FAM_BAL_POWER=0.5, seed 42, 冻 3 轮
+结果: Val 0.6883 (epoch 4) | Test 单路 0.7316 | 融合 blend 0.8298 / logit 0.8278 | 噪声 MLP 0.6530 / blend 0.7911
+      分关系（单路）: FD 0.7240 / FS 0.7770 / MD 0.7243 / MS 0.7011
+权重: weights/112-imagenet-mlp-head-rerun/best.pth
+日志: logs/112-imagenet-mlp-head-rerun/
+备注: 相对旧机器 AMP 开基线：单路 0.7539→0.7316（-0.022），融合 0.8394→0.8298（-0.010），噪声同幅度。
+      skip 全程 0/1187（基线 0~8）。Ada 锚点 0.7691/0.7782 完全复现，数据管线无误。
+      AMP 开在服务器上 Epoch 1 即 skip 1086~1119/1187（g_n 7455~9118），torch 2.2.2 与 2.8.0 均复现，
+      关 AMP 立即恢复 → fp16 是该 4090+驱动 595 组合的触发条件。矩阵四个实验全部 AMP 关。
+
+## 112-imagenet-hw-bce-margin（B：难样本加权开 + 家庭限权开）
+日期: 2026-09-02
+改动: BCE margin 软加权（正负两路），m=m'=0.15, β=2.0, clip [0.5,2.0]，权重 detach，sum(wL)/sum(w)
+设置: 同 A1 + USE_HW_BCE=True, FAM_BAL 开, AMP=False, seed 42
+结果: Val 0.6869 (epoch 4) | Test 单路 0.7333 | 融合 blend 0.8299 / logit 0.8281 | 噪声 MLP 0.6589 / blend 0.7950
+权重: weights/112-imagenet-hw-bce-margin/best.pth
+日志: logs/112-imagenet-hw-bce-margin/
+备注: 过门（单路 ≥0.7316、融合 >0.8298）但幅度在 σ=0.005 内：+0.0017/+0.0001 → 无显著提升、无损害。
+      训练动力学与 A1 完全一致（skip 全程 0）。negative result：BCE 侧 margin 加权对 F_kin 余弦指标惰性。
+
+## 112-imagenet-hw-bce-margin-nofam（C：加权开 + 家庭限权关）
+日期: 2026-09-02
+改动: 相对 B 只关 USE_FAM_BAL（均匀打乱）
+设置: USE_HW_BCE=True, FAM_BAL 关, AMP=False, seed 42
+结果: Val 0.6699 (epoch 6) | Test 单路 0.7115 | 融合 blend 0.8218 / logit 0.8201 | 噪声 MLP 0.6346 / blend 0.7842 | α=0.65
+权重: weights/112-imagenet-hw-bce-margin-nofam/best.pth
+日志: logs/112-imagenet-hw-bce-margin-nofam/
+备注: 训练稳定性不合格：skip E8=1→E9=3→E10=39→E11=403（早停）。best.pth 来自干净轮次 E6（skip=0）。
+      Test 结果仅供参考。关 FAM 的代价：Val -0.017（0.6869→0.6699），Test 单路 -0.022（0.7333→0.7115）。
+
+## 112-imagenet-plain-nofam（D：纯对照，加权关 + 家庭限权关）
+日期: 2026-09-02
+改动: HW 关 + FAM 关（2×2 第四格，补全矩阵）
+设置: USE_HW_BCE=False, FAM_BAL 关, AMP=False, seed 42
+结果: Val 0.6709 (epoch 9) | Test 单路 0.7082 | 融合 blend 0.8139 / logit 0.8148 | 噪声 MLP 0.6515 / blend 0.7867 | α=0.70
+权重: weights/112-imagenet-plain-nofam/best.pth
+日志: logs/112-imagenet-plain-nofam/
+备注: skip E9=23→E10=282→E11=644→E12=866→E13=1028→E14=1112（早停）。不稳定与加权无关（D 加权是关的），
+      坐实"关 FAM_BAL 必晚期不稳定"（历史 8 月记录同款模式）。Test 结果仅供参考。
+
+矩阵结论（2×2，标准 Test 四类平均 AUC 单路/融合）：
+      FAM 开 × HW 开 = 0.7333/0.8299（B）  FAM 开 × HW 关 = 0.7316/0.8298（A1）
+      FAM 关 × HW 开 = 0.7115/0.8218（C）  FAM 关 × HW 关 = 0.7082/0.8139（D）
+      HW 效应 ≈ 0（FAM 开层 +0.0017/+0.0001）；FAM 效应 +0.022/+0.012，且为训练稳定性唯一来源。
+      下一步候选：B2（DFC 逐行加权，把同一套 margin 加权放到 InfoNCE 上），待定。
