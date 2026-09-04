@@ -37,8 +37,9 @@ def dfc_valid_neg_mask(fid_p, person_p, fid_c, person_c):
     return ~(same_family | same_person | eye)
 
 
-def info_nce(sim_matrix, tau, valid_neg=None):
-    """向量化InfoNCE损失，正样本为对角线；valid_neg 为 False 的位置不进分母。"""
+def info_nce(sim_matrix, tau, valid_neg=None, row_weight=None):
+    """向量化InfoNCE损失，正样本为对角线；valid_neg 为 False 的位置不进分母。
+    row_weight: [B] 逐行权重（B2 难样本加权），按 sum(w·L)/sum(w) 归一。"""
     sim = sim_matrix / tau
     # 数值稳定处理
     sim_max = torch.max(sim, dim=1, keepdim=True)[0].detach()
@@ -48,32 +49,38 @@ def info_nce(sim_matrix, tau, valid_neg=None):
     if valid_neg is None:
         denominator = torch.sum(exp_sim, dim=1)
         loss = -torch.log(numerator / (denominator + 1e-8))
-        return loss.mean()
+        if row_weight is None:
+            return loss.mean()
+        w = row_weight.to(loss.dtype)
+        return (loss * w).sum() / w.sum().clamp(min=1e-8)
     neg_sum = (exp_sim * valid_neg.to(exp_sim.dtype)).sum(dim=1)
     denominator = numerator + neg_sum
     loss = -torch.log(numerator / (denominator + 1e-8))
     has_neg = valid_neg.any(dim=1)
     if not torch.any(has_neg):
         return sim_matrix.new_zeros(())
-    return loss[has_neg].mean()
+    if row_weight is None:
+        return loss[has_neg].mean()
+    w = row_weight.to(loss.dtype)
+    return (loss[has_neg] * w[has_neg]).sum() / w[has_neg].sum().clamp(min=1e-8)
 
-def L_MF(x, y, mf_func, tau, valid_neg=None):
+def L_MF(x, y, mf_func, tau, valid_neg=None, row_weight=None):
     """双向对称对比损失"""
     sim_xy = mf_func(x, y)
     sim_yx = mf_func(y, x)
-    l1 = info_nce(sim_xy, tau, valid_neg)
-    l2 = info_nce(sim_yx, tau, valid_neg)
+    l1 = info_nce(sim_xy, tau, valid_neg, row_weight)
+    l2 = info_nce(sim_yx, tau, valid_neg, row_weight)
     return (l1 + l2) / 2.0
 
-def loss_dfc(kin_p, kin_c, fid_p=None, person_p=None, fid_c=None, person_c=None):
-    """双度量对比损失。对比在 FP32 中计算。"""
+def loss_dfc(kin_p, kin_c, fid_p=None, person_p=None, fid_c=None, person_c=None, row_weight=None):
+    """双度量对比损失。对比在 FP32 中计算。row_weight: [B] 逐行难样本权重。"""
     kin_p = kin_p.float()
     kin_c = kin_c.float()
     valid_neg = None
     if fid_p is not None and person_p is not None and fid_c is not None and person_c is not None:
         valid_neg = dfc_valid_neg_mask(fid_p, person_p, fid_c, person_c)
-    l_cs = L_MF(kin_p, kin_c, mf_cosine, config.TAU_CS, valid_neg)
-    l_ed = L_MF(kin_p, kin_c, mf_euclidean, config.TAU_ED, valid_neg)
+    l_cs = L_MF(kin_p, kin_c, mf_cosine, config.TAU_CS, valid_neg, row_weight)
+    l_ed = L_MF(kin_p, kin_c, mf_euclidean, config.TAU_ED, valid_neg, row_weight)
     loss_base = A_DFC * l_cs + B_DFC * l_ed
     
     if config.USE_WEIGHT_DFC:
@@ -132,6 +139,14 @@ def total_multi_loss(kin_p, kin_c, pred_kv, pred_gr_p, pred_gr_c, pred_ap, pred_
     else:
         l_age = kin_p.new_zeros(())
 
-    l_dfc = loss_dfc(kin_p, kin_c, fid_p=fid_p, person_p=person_p, fid_c=fid_c, person_c=person_c)
+    if config.USE_HW_DFC:
+        # B2：同一套 margin 软加权放到 DFC InfoNCE 上，逐行加权（权重已 detach）
+        w_dfc = hard_margin_weight(kin_p, kin_c, config.HW_MARGIN_POS,
+                                   config.HW_GAIN, config.HW_LO, config.HW_HI,
+                                   higher_is_harder=False)
+        l_dfc = loss_dfc(kin_p, kin_c, fid_p=fid_p, person_p=person_p,
+                         fid_c=fid_c, person_c=person_c, row_weight=w_dfc)
+    else:
+        l_dfc = loss_dfc(kin_p, kin_c, fid_p=fid_p, person_p=person_p, fid_c=fid_c, person_c=person_c)
     total = ALPHA * l_kv + BETA * l_gr + gamma * l_age + (1 - ALPHA - BETA - gamma) * l_dfc
     return total, l_dfc, l_kv, l_gr, l_age

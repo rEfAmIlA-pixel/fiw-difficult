@@ -23,7 +23,7 @@ USE_EMA = False
 EMA_DECAY = 0.9995
 RESUME_START_EPOCH = 0
 RESUME_BEST_AUC = 0.0
-EXP_NAME = "112-imagenet-plain-nofam"
+EXP_NAME = "112-imagenet-hw-dfc-margin"
 SAVE_DIR = f"./weights/{EXP_NAME}/"
 LOG_DIR = f"./logs/{EXP_NAME}/"
 CKPT_BEST = "best.pth"
@@ -42,11 +42,12 @@ GAMMA = 0.0
 USE_MTFMF = True
 USE_AGE_MASK = False
 USE_WEIGHT_DFC = False
-USE_FAM_BAL = False
+USE_FAM_BAL = True
 FAM_BAL_POWER = 0.5
 
 # ----- 难样本加权：BCE margin 软加权（112-imagenet-hw-bce-margin 系列）-----
-USE_HW_BCE = False      # D 实验：难样本加权关（False 时与基线行为完全一致）
+USE_HW_BCE = False      # B2：BCE 侧加权已验证无效，关闭
+USE_HW_DFC = True       # B2：同一套 margin 软加权放到 DFC InfoNCE 逐行加权（正对）
 HW_MARGIN_POS = 0.15    # 正对余弦低于此值开始加权
 HW_MARGIN_NEG = 0.15    # 负对余弦高于此值开始加权
 HW_GAIN = 2.0           # 间隔增益 β

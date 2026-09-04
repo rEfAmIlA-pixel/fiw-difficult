@@ -12,8 +12,8 @@ from dataset import load_fiw_split, load_fiw_pos_neg, MultiColorTransform
 from model import AdaFaceBackbone, MultiGranFuzzyKinNetSwin
 from eval import Logger, calc_metrics, print_result_table, RELATIONS
 
-FUSION_EXP = "112-imagenet-plain-nofam"
-MLP_CKPT = "weights/112-imagenet-plain-nofam/best.pth"
+FUSION_EXP = "112-imagenet-hw-dfc-margin"
+MLP_CKPT = "weights/112-imagenet-hw-dfc-margin/best.pth"
 FUSION_BATCH = 32
 
 

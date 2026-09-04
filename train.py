@@ -393,7 +393,7 @@ def train_fiw(logger):
     else:
         logger.log("家庭限权: 关（均匀打乱）")
     logger.log(
-        f"难样本加权: {'开' if USE_HW_BCE else '关'} | "
+        f"难样本加权: {'BCE' if USE_HW_BCE else ('DFC' if USE_HW_DFC else '关')} | "
         f"margin_pos={HW_MARGIN_POS} margin_neg={HW_MARGIN_NEG} | "
         f"gain={HW_GAIN} | clip=[{HW_LO},{HW_HI}]"
     )
