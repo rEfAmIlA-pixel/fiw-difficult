@@ -6,7 +6,7 @@ IMG_SIZE = 112
 NUM_WORKERS = 8
 PREFETCH_FACTOR = 4
 PIN_MEMORY = True
-USE_AMP = True
+USE_AMP = False  # 服务器 4090+驱动595 fp16 训练 NaN（A1 验证），矩阵全部关 AMP（已确认）
 
 # ----- 112-MLP 训练（Swin ImageNet → FIW）-----
 BATCH_SIZE = 128
@@ -23,7 +23,7 @@ USE_EMA = False
 EMA_DECAY = 0.9995
 RESUME_START_EPOCH = 0
 RESUME_BEST_AUC = 0.0
-EXP_NAME = "112-imagenet-mlp-head"
+EXP_NAME = "112-imagenet-plain-nofam"
 SAVE_DIR = f"./weights/{EXP_NAME}/"
 LOG_DIR = f"./logs/{EXP_NAME}/"
 CKPT_BEST = "best.pth"
@@ -42,11 +42,11 @@ GAMMA = 0.0
 USE_MTFMF = True
 USE_AGE_MASK = False
 USE_WEIGHT_DFC = False
-USE_FAM_BAL = True
+USE_FAM_BAL = False
 FAM_BAL_POWER = 0.5
 
 # ----- 难样本加权：BCE margin 软加权（112-imagenet-hw-bce-margin 系列）-----
-USE_HW_BCE = False      # 总开关；False 时与基线行为完全一致
+USE_HW_BCE = False      # D 实验：难样本加权关（False 时与基线行为完全一致）
 HW_MARGIN_POS = 0.15    # 正对余弦低于此值开始加权
 HW_MARGIN_NEG = 0.15    # 负对余弦高于此值开始加权
 HW_GAIN = 2.0           # 间隔增益 β

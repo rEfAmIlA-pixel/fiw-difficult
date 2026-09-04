@@ -7,3 +7,6 @@ weights/
 
 # FIW 人脸图像（578MB，自行传输）
 data/FIW/FIDs/
+
+# Jupyter 残留
+.ipynb_checkpoints/
